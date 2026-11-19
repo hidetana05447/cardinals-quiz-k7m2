@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f6f4ef">
+<title>野球ルールクイズ（デモ）</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* スマホ前提：縦1列。画面は3つ（①出題 ②解説 ③結果）。ボタンは画面の下に固定 */
+:root{--red:#d6001c;--ink:#16181c;--bg:#f6f4ef;--ok:#1b9e4b;--ng:#c0392b;--bar:96px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:#e9e6df}
+body{font-family:"Noto Sans JP",sans-serif;color:var(--ink);display:flex;justify-content:center;overscroll-behavior-y:contain}
+.app{width:100%;max-width:480px;min-height:100vh;min-height:100dvh;background:var(--bg);display:flex;flex-direction:column;overflow-x:clip}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer;border:0}
+.hidden{display:none!important}
+/* 上：進み具合だけ（コンパクト） */
+header{display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 18px 12px;border-bottom:3px solid var(--ink)}
+.dots{display:flex;gap:7px}.dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);background:transparent;transition:background .2s}
+.dots i.on{background:var(--ink)}
+.prog{font-size:13px;color:#666;font-weight:700;letter-spacing:.06em}
+.badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;margin-left:8px;vertical-align:middle}
+/* 画面：下の固定ボタンに隠れないよう、下に余白 */
+main{flex:1;padding:18px 18px calc(var(--bar) + env(safe-area-inset-bottom) + 8px)}
+.screen{min-height:100%}
+/* ①出題 */
+.q{font-weight:900;font-size:23px;line-height:1.5;margin:8px 0 22px}
+.choices{display:grid;gap:14px}
+.choice{font-weight:700;font-size:19px;text-align:left;padding:18px 18px;min-height:68px;background:#fff;border:2px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .12s,transform .08s}
+.choice:active:not(:disabled){transform:scale(.98);background:#fff3cc}
+@media(hover:hover){.choice:hover:not(:disabled){background:#fff3cc}}
+.choice:disabled{cursor:default;color:var(--ink)}
+.choice.right{background:#d8f3e2;border-color:var(--ok)}
+.choice.wrong{background:#fbe0dc;border-color:var(--ng)}
+.mark{flex:none;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;font-size:32px;font-weight:900;line-height:1;transform-origin:center}
+.right .mark{color:var(--ok)}.wrong .mark{color:var(--ng)}
+/* ②解説 */
+.verdict{display:flex;align-items:center;gap:12px;padding:14px 16px;color:#fff;font-weight:900;font-size:22px}
+.verdict.ok{background:var(--ok)}.verdict.ng{background:var(--ng)}
+.verdict small{display:block;font-size:14px;font-weight:700;opacity:.95;margin-top:2px}
+.recap{font-size:13px;color:#777;line-height:1.6;margin:14px 2px 6px}
+.stage{display:flex;align-items:flex-end;gap:8px;margin-top:10px}
+.bubble{flex:1;background:#fff;border:2px solid var(--ink);padding:14px 16px;font-size:16px;line-height:1.8;font-weight:700;position:relative;margin-bottom:14px}
+.bubble::after{content:"";position:absolute;right:-9px;bottom:26px;width:14px;height:14px;background:#fff;border-right:2px solid var(--ink);border-top:2px solid var(--ink);transform:rotate(45deg)}
+#chara{width:132px;height:213px;object-fit:contain;object-position:bottom;flex:none}
+/* ③結果 */
+.result{text-align:center;padding-top:10px}
+.result .stage{justify-content:center;margin-top:0}
+#score{font-weight:900;font-size:88px;line-height:1;margin-top:6px}#score small{font-size:28px}
+#verdict2{font-weight:900;font-size:30px;margin:12px 0 6px}
+.pass{color:var(--ok)}.fail{color:var(--ng)}
+/* 下：親指の位置に固定（内容が長くても、必ず見える） */
+.bar{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:480px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(rgba(246,244,239,0),var(--bg) 30%);pointer-events:none;z-index:5}
+.bar button{pointer-events:auto;display:block;width:100%;height:60px;background:var(--red);color:#fff;font-weight:900;font-size:18px;letter-spacing:.04em;box-shadow:0 3px 0 #8f0013}
+.bar button:active{transform:translateY(2px);box-shadow:0 1px 0 #8f0013}
+.lv{justify-content:space-between}.lv span{display:block}.lv small{display:block;font-size:13px;color:#666;font-weight:700;margin-top:4px}.lv.soon{background:#eee;border-style:dashed;color:#888}.lv.soon i{color:#aaa;font-size:16px;letter-spacing:0}.lv i{font-style:normal;color:var(--red);font-size:20px;letter-spacing:.1em;flex:none}
+.src{margin-top:28px;padding-top:14px;border-top:1px solid #ccc;font-size:12px;color:#777;line-height:1.7}.src ul{margin:4px 0 6px 1.2em}.src a{color:#555}
+.topic{display:inline-block;background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:2px 9px;margin-top:6px;letter-spacing:.04em}
+.more{margin-top:6px;background:#fff8dd;border:2px solid var(--ink);padding:12px 14px}.more b{display:block;font-size:13px;margin-bottom:6px}.more ul{list-style:none}.more li{font-size:14px;line-height:1.7;font-weight:700;padding-left:1.3em;text-indent:-1.3em;margin-top:4px}.more li::before{content:"✔ ";color:var(--ok)}
+.review{margin-top:20px;text-align:left}.review h3{font-size:14px;font-weight:900;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:4px}
+.rv{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid #d8d4ca}.rv .m{flex:none;width:28px;height:28px;border-radius:50%;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:16px;margin-top:2px}
+.rv.ok .m{background:var(--ok)}.rv.ng .m{background:var(--ng)}.rv .t{font-size:14px;line-height:1.6;font-weight:700}.rv .t small{display:block;font-size:12px;color:#666;font-weight:700;margin-top:3px}.rv .t .you{color:var(--ng)}.rv .t .ans{color:var(--ok)}
+.fig{max-width:300px;margin:0 auto 16px;background:#fff;border:2px solid var(--ink);padding:8px}
+.dev{font-size:11px;color:#999;text-align:center;padding:4px 0 10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header><div class="dots" id="dots"></div><span class="prog" id="prog"></span></header>
+  <main>
+    <!-- ⓪ レベル選択 -->
+    <section class="screen hidden" id="s0">
+      <h2 class="q">野球ルールクイズ<br><small style="font-size:15px;color:#666;font-weight:700">レベルをえらんでね（1回5問）</small></h2>
+      <div class="choices" id="levels">
+        <button class="choice lv" data-lv="1"><span>はじめて・1〜2年生<small>基本のことば</small></span><i>★</i></button>
+        <button class="choice lv" data-lv="2"><span>3〜6年生<small>やさしい問題から、むずかしい問題まで</small></span><i>★★</i></button>
+        <button class="choice lv" data-lv="3"><span>鬼レベル<small>条件がややこしい。考えないと、わからない</small></span><i>★★★★</i></button>
+        <button class="choice lv soon" disabled><span>審判・保護者向け<small>じゅんびちゅう（開発中）</small></span><i>🔒</i></button>
+      </div>
+    </section>
+    <!-- ① 出題：クイズだけ -->
+    <section class="screen hidden" id="s1">
+      <h2 class="q" id="q"></h2>
+      <div class="fig hidden" id="fig1"></div>
+      <div class="choices" id="choices"></div>
+    </section>
+    <!-- ② 解説：回答の後 -->
+    <section class="screen hidden" id="s2">
+      <div class="verdict" id="vd"><span id="vmark" style="font-size:34px"></span><div><span id="vtext"></span><small id="vans"></small></div></div>
+      <p class="recap" id="recap"></p>
+      <div class="fig hidden" id="fig2"></div>
+      <div class="stage">
+        <div class="bubble" id="bubble"></div>
+        <img id="chara" src="img/wink.png" alt="">
+      </div>
+      <div class="more hidden" id="more"></div>
+    </section>
+    <!-- ③ 結果 -->
+    <section class="screen hidden result" id="s3">
+      <div class="stage"><img id="chara3" src="img/run.png" alt=""></div>
+      <div id="score">0<small>点</small></div>
+      <p id="verdict2"></p>
+      <p class="prog" id="detail"></p>
+      <div class="review" id="review"></div>
+    </section>
+    <footer class="src" id="src">
+      <b>しゅってん（ルールのよりどころ）</b>
+      <ul>
+        <li><a href="https://www.jsbb.or.jp/rule/" target="_blank" rel="noopener">全日本軟式野球連盟「連盟適用ルール」</a></li>
+        <li><a href="https://jsbb.or.jp/docs/2026OfficialBaseballRulesInJapanRevisions.pdf" target="_blank" rel="noopener">2026年 野球規則改正について（全軟連）</a></li>
+        <li><a href="https://jsbb.or.jp/docs/75bc86680162cfaddee72de4e298a4134531c3c2.pdf" target="_blank" rel="noopener">2026年 競技者必携 改訂について（全軟連）</a></li>
+        <li><a href="https://npb.jp/news/detail/20180621_01.html" target="_blank" rel="noopener">日本野球機構（NPB）記録員コラム：第3ストライクと振り逃げ</a></li>
+        <li><a href="https://npb.jp/npb/2018rules.html" target="_blank" rel="noopener">日本野球機構（NPB）：野球規則の改正</a></li>
+      </ul>
+      <p>問題は公認野球規則をもとに作成。大会ごとの特別ルールで、扱いが変わることがあります。確認中のデモです。</p>
+    </footer>
+    <p class="dev" id="devLinks"></p>
+  </main>
+  <div class="bar"><button id="act" class="hidden"></button></div>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
