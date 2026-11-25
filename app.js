@@ -52,7 +52,7 @@ try{seenSet=new Set(JSON.parse(localStorage.getItem('quizSeen')||'[]'))}catch(e)
 const markSeen=q=>{seenSet.add(q);try{localStorage.setItem('quizSeen',JSON.stringify([...seenSet].slice(-400)))}catch(e){}};
 const rnd=n=>Math.floor(Math.random()*n);
 function pickStatic(df,used){
-  let pool=DATA.filter(d=>d.diff===df&&!used.has(d.q));
+  let pool=DATA.filter(d=>(d.diff===df||d.also===df)&&!used.has(d.q));
   const fresh=pool.filter(d=>!seenSet.has(d.q));
   if(fresh.length)pool=fresh;else pool.forEach(d=>seenSet.delete(d.q));   // 全部見たら、見た記録をリセット
   return pool[rnd(pool.length)];
