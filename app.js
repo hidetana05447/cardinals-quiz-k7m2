@@ -32,7 +32,7 @@ function countUp(el,to){
 // ---- データ（questions.json）----
 const DATA=await fetch('questions.json').then(r=>r.json());
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const PASS=60,PER_ROUND=5;let level=1,passed=false;
+const PASS=80,PER_ROUND=5;let level=1,passed=false;
 let order=[],idx=0,correctCount=0,phase='quiz',history=[];
 let viewing=null,ret=null;   // 前の問題の解説を見ている番号と、もどる先
 
